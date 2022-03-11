@@ -22,7 +22,7 @@ pub enum MultisigInstruction {
     ///   0. [WRITE, SIGNER]    Funder account
     ///   1. [WRITE, SIGNER]    Proposer account
     ///   2. [WRITE, SIGNER]    Transaction account
-    ///   3. []                 Multisig account
+    ///   3. [WRITE]            Multisig account
     ///   4. []                 System program
     ///   5. []                 The rent sysvar
     CreateTransaction {
@@ -41,7 +41,7 @@ pub enum MultisigInstruction {
     ///
     /// # Account references
     ///   0. [WRITE]            Transaction account
-    ///   1. []                 Multisig account
+    ///   1. [WRITE]            Multisig account
     ///   2. []                 Multisig Signer account
     ///   ...                   Set instruction accounts
     ExecuteTransaction,
@@ -113,7 +113,7 @@ pub fn create_transaction(
             AccountMeta::new(*funder_pubkey, true),
             AccountMeta::new(*proposer_pubkey, true),
             AccountMeta::new(*transaction_pubkey, true),
-            AccountMeta::new_readonly(*multisig_pubkey, false),
+            AccountMeta::new(*multisig_pubkey, false),
             AccountMeta::new_readonly(system_program::id(), false),
             AccountMeta::new_readonly(sysvar::rent::id(), false),
         ],
@@ -148,7 +148,7 @@ pub fn execute_transaction(
 
     let mut accounts = vec![
         AccountMeta::new(*transaction_pubkey, false),
-        AccountMeta::new_readonly(*multisig_pubkey, false),
+        AccountMeta::new(*multisig_pubkey, false),
         AccountMeta::new_readonly(multisig_signer_pubkey, false),
     ];
 

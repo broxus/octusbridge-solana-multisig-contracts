@@ -1,6 +1,8 @@
 #![cfg(feature = "test-bpf")]
 
 use solana_program::program_pack::Pack;
+use solana_program::pubkey::Pubkey;
+use solana_program::rent::Rent;
 use solana_program_test::{processor, tokio, ProgramTest};
 use solana_sdk::account::ReadableAccount;
 use solana_sdk::signature::{Keypair, Signer};
@@ -74,9 +76,13 @@ async fn test() {
             &custodian_1.pubkey(),
             &multisig.pubkey(),
             &tx.pubkey(),
-            multisig::id(),
-            vec![],
-            vec![],
+            solana_program::system_instruction::create_account(
+                &funder.pubkey(),
+                &Pubkey::new_unique(),
+                1.max(Rent::default().minimum_balance(0)),
+                0,
+                &multisig::id(),
+            ),
         )],
         Some(&funder.pubkey()),
     );
@@ -98,7 +104,10 @@ async fn test() {
 
     assert_eq!(transaction_data.is_initialized, true);
     assert_eq!(transaction_data.did_execute, false);
-    assert_eq!(transaction_data.program_id, multisig::id());
+    assert_eq!(
+        transaction_data.program_id,
+        solana_program::system_program::id()
+    );
 
     // Approve
     let mut transaction = Transaction::new_with_payer(
