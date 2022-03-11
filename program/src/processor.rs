@@ -41,6 +41,10 @@ impl Processor {
                 msg!("Instruction: Execute Transaction");
                 Self::process_execute_transaction(program_id, accounts)?;
             }
+            MultisigInstruction::CreateMultisigSigner => {
+                msg!("Instruction: Create Multisig Signer");
+                Self::process_create_multisig_signer(program_id, accounts)?;
+            }
         };
 
         Ok(())
@@ -200,8 +204,8 @@ impl Processor {
     fn process_execute_transaction(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
         let account_info_iter = &mut accounts.iter();
 
-        let multisig_account_info = next_account_info(account_info_iter)?;
         let transaction_account_info = next_account_info(account_info_iter)?;
+        let multisig_account_info = next_account_info(account_info_iter)?;
         let multisig_signer_account_info = next_account_info(account_info_iter)?;
 
         let multisig_account_data = Multisig::unpack(&multisig_account_info.data.borrow())?;
@@ -263,6 +267,50 @@ impl Processor {
         Transaction::pack(
             transaction_account_data,
             &mut transaction_account_info.data.borrow_mut(),
+        )?;
+
+        Ok(())
+    }
+
+    fn process_create_multisig_signer(
+        program_id: &Pubkey,
+        accounts: &[AccountInfo],
+    ) -> ProgramResult {
+        let account_info_iter = &mut accounts.iter();
+
+        let funder_account_info = next_account_info(account_info_iter)?;
+        let multisig_signer_account_info = next_account_info(account_info_iter)?;
+        let multisig_account_info = next_account_info(account_info_iter)?;
+        let system_program_info = next_account_info(account_info_iter)?;
+        let rent_sysvar_info = next_account_info(account_info_iter)?;
+        let rent = &Rent::from_account_info(rent_sysvar_info)?;
+
+        let (multisig_signer_account, multisig_signer_nonce) =
+            Pubkey::find_program_address(&[&multisig_account_info.key.to_bytes()], program_id);
+
+        if multisig_signer_account != *multisig_signer_account_info.key {
+            return Err(ProgramError::InvalidAccountData);
+        }
+
+        let multisig_account_signer_seeds: &[&[_]] = &[
+            &multisig_account_info.key.to_bytes(),
+            &[multisig_signer_nonce],
+        ];
+
+        invoke_signed(
+            &system_instruction::create_account(
+                funder_account_info.key,
+                multisig_signer_account_info.key,
+                1.max(rent.minimum_balance(0)),
+                0,
+                program_id,
+            ),
+            &[
+                funder_account_info.clone(),
+                multisig_signer_account_info.clone(),
+                system_program_info.clone(),
+            ],
+            &[multisig_account_signer_seeds],
         )?;
 
         Ok(())
