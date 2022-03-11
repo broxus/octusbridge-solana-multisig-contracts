@@ -7,6 +7,9 @@ use solana_program::pubkey::Pubkey;
 
 use multisig_derive::MultisigPack;
 
+/// Maximum number of pending transactions
+pub const MAX_TRANSACTIONS: usize = 10;
+
 #[derive(Debug, BorshSerialize, BorshDeserialize, MultisigPack)]
 #[multisig_pack(length = 500)]
 pub struct Multisig {
@@ -15,6 +18,8 @@ pub struct Multisig {
     pub owners: Vec<Pubkey>,
     // Required number of signers
     pub threshold: u64,
+    // Set of pending transactions
+    pub pending_transactions: Vec<Pubkey>,
 }
 
 impl Sealed for Multisig {}

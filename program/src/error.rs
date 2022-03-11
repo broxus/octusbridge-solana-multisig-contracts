@@ -22,6 +22,10 @@ pub enum MultisigError {
     InvalidThreshold,
     #[error("Owners must be unique")]
     UniqueOwners,
+    #[error("Pending transaction limit exceeded")]
+    PendingTransactionLimit,
+    #[error("Invalid transaction")]
+    InvalidTransaction,
 }
 
 impl From<MultisigError> for ProgramError {

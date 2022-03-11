@@ -13,6 +13,7 @@ use solana_program::{msg, system_instruction};
 
 use crate::{
     require, Multisig, MultisigError, MultisigInstruction, Transaction, TransactionAccount,
+    MAX_TRANSACTIONS,
 };
 
 pub struct Processor;
@@ -96,6 +97,7 @@ impl Processor {
             is_initialized: true,
             owners,
             threshold,
+            pending_transactions: vec![],
         };
 
         Multisig::pack(multisig, &mut multisig_account_info.data.borrow_mut())?;
@@ -124,7 +126,11 @@ impl Processor {
             return Err(ProgramError::MissingRequiredSignature);
         }
 
-        let multisig_account_data = Multisig::unpack(&multisig_account_info.data.borrow())?;
+        let mut multisig_account_data = Multisig::unpack(&multisig_account_info.data.borrow())?;
+
+        if multisig_account_data.pending_transactions.len() >= MAX_TRANSACTIONS {
+            return Err(MultisigError::PendingTransactionLimit.into());
+        }
 
         let owner_index = multisig_account_data
             .owners
@@ -162,6 +168,16 @@ impl Processor {
         };
 
         Transaction::pack(tx, &mut transaction_account_info.data.borrow_mut())?;
+
+        // Add transaction to pending list
+        multisig_account_data
+            .pending_transactions
+            .push(*transaction_account_info.key);
+
+        Multisig::pack(
+            multisig_account_data,
+            &mut multisig_account_info.data.borrow_mut(),
+        )?;
 
         Ok(())
     }
@@ -208,7 +224,7 @@ impl Processor {
         let multisig_account_info = next_account_info(account_info_iter)?;
         let multisig_signer_account_info = next_account_info(account_info_iter)?;
 
-        let multisig_account_data = Multisig::unpack(&multisig_account_info.data.borrow())?;
+        let mut multisig_account_data = Multisig::unpack(&multisig_account_info.data.borrow())?;
         let mut transaction_account_data =
             Transaction::unpack(&transaction_account_info.data.borrow())?;
 
@@ -267,6 +283,22 @@ impl Processor {
         Transaction::pack(
             transaction_account_data,
             &mut transaction_account_info.data.borrow_mut(),
+        )?;
+
+        // Remove transaction from pending list
+        let transaction_index = multisig_account_data
+            .pending_transactions
+            .iter()
+            .position(|x| x == transaction_account_info.key)
+            .ok_or(MultisigError::InvalidTransaction)?;
+
+        multisig_account_data
+            .pending_transactions
+            .remove(transaction_index);
+
+        Multisig::pack(
+            multisig_account_data,
+            &mut multisig_account_info.data.borrow_mut(),
         )?;
 
         Ok(())
