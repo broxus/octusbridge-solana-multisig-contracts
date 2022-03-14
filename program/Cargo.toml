@@ -5,13 +5,15 @@ authors = ["Broxus team"]
 edition = "2021"
 
 [features]
-no-entrypoint = []
 test-bpf = []
+no-entrypoint = []
+wasm = ["no-entrypoint", "wasm-bindgen"]
 
 [dependencies]
 borsh = "0.9"
 solana-program = "1.9"
 thiserror = "1.0"
+wasm-bindgen = { version = "0.2.79", features = ["serde-serialize"], optional = true }
 
 multisig-derive = { path = "../multisig-derive" }
 
