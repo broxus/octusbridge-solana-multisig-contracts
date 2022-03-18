@@ -13,7 +13,7 @@ use solana_program::{msg, system_instruction};
 
 use crate::{
     require, Multisig, MultisigError, MultisigInstruction, Transaction, TransactionAccount,
-    MAX_TRANSACTIONS,
+    MAX_SIGNERS, MAX_TRANSACTIONS, MIN_SIGNERS,
 };
 
 pub struct Processor;
@@ -72,7 +72,9 @@ impl Processor {
         assert_unique_owners(&owners)?;
 
         require!(
-            threshold > 0 && threshold <= owners.len() as u64,
+            threshold <= owners.len() as u64
+                && threshold <= MAX_SIGNERS as u64
+                && threshold >= MIN_SIGNERS as u64,
             MultisigError::InvalidThreshold
         );
 

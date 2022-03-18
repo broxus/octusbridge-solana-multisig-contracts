@@ -7,6 +7,10 @@ use solana_program::pubkey::Pubkey;
 
 use multisig_derive::MultisigPack;
 
+/// Minimum number of multisignature signers
+pub const MIN_SIGNERS: usize = 1;
+/// Maximum number of multisignature signers
+pub const MAX_SIGNERS: usize = 8;
 /// Maximum number of pending transactions
 pub const MAX_TRANSACTIONS: usize = 10;
 

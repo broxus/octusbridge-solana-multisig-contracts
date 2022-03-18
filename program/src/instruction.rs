@@ -191,6 +191,6 @@ pub fn create_multisig_signer(funder_pubkey: &Pubkey, multisig_pubkey: &Pubkey) 
     }
 }
 
-pub fn get_multisig_signer_address(multisig: &Pubkey) -> Pubkey {
-    Pubkey::find_program_address(&[&multisig.to_bytes()], &id()).0
+pub fn get_multisig_signer_address(multisig_pubkey: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(&[&multisig_pubkey.to_bytes()], &id()).0
 }
