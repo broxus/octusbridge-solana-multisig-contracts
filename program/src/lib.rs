@@ -20,4 +20,4 @@ extern crate wasm_bindgen;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 pub mod wasm;
 
-solana_program::declare_id!("9RVX1zPChY78ZNwAmMgtdwfupGrbBz1vJRCqPFnTzrMW");
+solana_program::declare_id!("53PYe3yW9YDvm3z5cJJVrycF5XNDiNiPX8zdxeBqoBqe");
