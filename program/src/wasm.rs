@@ -3,13 +3,15 @@ use std::str::FromStr;
 use borsh::BorshSerialize;
 
 use solana_program::instruction::{AccountMeta, Instruction};
+use solana_program::program_pack::Pack;
 use solana_program::pubkey::Pubkey;
 use solana_program::{bpf_loader_upgradeable, system_program, sysvar};
 
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    get_multisig_address, get_transaction_address, id, MultisigInstruction, TransactionAccount,
+    get_multisig_address, get_transaction_address, id, MultisigInstruction, Transaction,
+    TransactionAccount,
 };
 
 #[wasm_bindgen(js_name = "createMultisig")]
@@ -128,6 +130,43 @@ pub fn approve_ix(
             AccountMeta::new(transaction_pubkey, false),
             AccountMeta::new_readonly(multisig_pubkey, false),
         ],
+        data,
+    };
+
+    return JsValue::from_serde(&ix).unwrap();
+}
+
+#[wasm_bindgen(js_name = "execute")]
+pub fn execute_ix(
+    multisig_pubkey: String,
+    transaction_pubkey: String,
+    transaction_data: Vec<u8>,
+) -> JsValue {
+    let multisig_pubkey = Pubkey::from_str(multisig_pubkey.as_str()).unwrap();
+    let transaction_pubkey = Pubkey::from_str(transaction_pubkey.as_str()).unwrap();
+
+    let transaction_data = Transaction::unpack(&transaction_data).unwrap();
+
+    let mut accounts = vec![
+        AccountMeta::new(multisig_pubkey, false),
+        AccountMeta::new(transaction_pubkey, false),
+    ];
+
+    for account in transaction_data.accounts {
+        let account_meta = match account.is_writable {
+            true => AccountMeta::new(account.pubkey, false),
+            false => AccountMeta::new_readonly(account.pubkey, false),
+        };
+        accounts.push(account_meta);
+    }
+
+    let data = MultisigInstruction::ExecuteTransaction
+        .try_to_vec()
+        .expect("pack");
+
+    let ix = Instruction {
+        program_id: id(),
+        accounts,
         data,
     };
 
