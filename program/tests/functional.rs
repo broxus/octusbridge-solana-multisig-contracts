@@ -20,7 +20,7 @@ async fn test() {
     let (mut banks_client, funder, recent_blockhash) = program_test.start().await;
 
     // Create Multisig
-    let multisig = Keypair::new();
+    let name = "test".to_string();
 
     let threshold = 2;
 
@@ -31,7 +31,7 @@ async fn test() {
     let mut transaction = Transaction::new_with_payer(
         &[multisig::create_multisig(
             &funder.pubkey(),
-            &multisig.pubkey(),
+            name.clone(),
             vec![
                 custodian_1.pubkey(),
                 custodian_2.pubkey(),
@@ -41,15 +41,17 @@ async fn test() {
         )],
         Some(&funder.pubkey()),
     );
-    transaction.sign(&[&funder, &multisig], recent_blockhash);
+    transaction.sign(&[&funder], recent_blockhash);
 
     banks_client
         .process_transaction(transaction)
         .await
         .expect("process_transaction");
 
+    let multisig_address = multisig::get_multisig_address(&name);
+
     let multisig_info = banks_client
-        .get_account(multisig.pubkey())
+        .get_account(multisig_address)
         .await
         .expect("get_account")
         .expect("account");
@@ -68,14 +70,12 @@ async fn test() {
     );
 
     // Create Transaction with empty instruction
-    let tx = Keypair::new();
-
     let mut transaction = Transaction::new_with_payer(
         &[multisig::create_transaction(
             &funder.pubkey(),
             &custodian_1.pubkey(),
-            &multisig.pubkey(),
-            &tx.pubkey(),
+            &multisig_address,
+            name.clone(),
             solana_program::system_instruction::create_account(
                 &funder.pubkey(),
                 &Pubkey::new_unique(),
@@ -86,15 +86,17 @@ async fn test() {
         )],
         Some(&funder.pubkey()),
     );
-    transaction.sign(&[&funder, &custodian_1, &tx], recent_blockhash);
+    transaction.sign(&[&funder, &custodian_1], recent_blockhash);
 
     banks_client
         .process_transaction(transaction)
         .await
         .expect("process_transaction");
 
+    let transaction_address = multisig::get_transaction_address(&name);
+
     let transaction_info = banks_client
-        .get_account(tx.pubkey())
+        .get_account(transaction_address)
         .await
         .expect("get_account")
         .expect("account");
@@ -113,8 +115,8 @@ async fn test() {
     let mut transaction = Transaction::new_with_payer(
         &[multisig::approve(
             &custodian_2.pubkey(),
-            &multisig.pubkey(),
-            &tx.pubkey(),
+            &multisig_address,
+            &transaction_address,
         )],
         Some(&funder.pubkey()),
     );
@@ -126,7 +128,7 @@ async fn test() {
         .expect("process_transaction");
 
     let transaction_info = banks_client
-        .get_account(tx.pubkey())
+        .get_account(transaction_address)
         .await
         .expect("get_account")
         .expect("account");

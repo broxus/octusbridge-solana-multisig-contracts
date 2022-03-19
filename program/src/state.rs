@@ -24,6 +24,8 @@ pub struct Multisig {
     pub threshold: u64,
     // Set of pending transactions
     pub pending_transactions: Vec<Pubkey>,
+    // Name to derive PDA
+    pub name: String,
 }
 
 impl Sealed for Multisig {}
