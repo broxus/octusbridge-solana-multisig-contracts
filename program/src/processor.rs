@@ -301,7 +301,7 @@ impl Processor {
             })
             .collect();
 
-        let accounts = account_info_iter.map(|x| x.clone()).collect::<Vec<_>>();
+        let accounts = account_info_iter.cloned().collect::<Vec<_>>();
 
         invoke_signed(&ix, &accounts, &[multisig_account_seeds])?;
 
