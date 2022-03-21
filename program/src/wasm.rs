@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use borsh::BorshSerialize;
+use serde::{Deserialize, Serialize};
 
 use solana_program::instruction::{AccountMeta, Instruction};
 use solana_program::program_pack::Pack;
@@ -10,7 +11,7 @@ use solana_program::{bpf_loader_upgradeable, system_program, sysvar};
 use wasm_bindgen::prelude::*;
 
 use crate::{
-    get_multisig_address, get_transaction_address, id, MultisigInstruction, Transaction,
+    get_multisig_address, get_transaction_address, id, state, MultisigInstruction, Transaction,
     TransactionAccount,
 };
 
@@ -171,4 +172,44 @@ pub fn execute_ix(
     };
 
     return JsValue::from_serde(&ix).unwrap();
+}
+
+#[wasm_bindgen(js_name = "unpackMultisig")]
+pub fn unpack_multisig(data: Vec<u8>) -> JsValue {
+    let multisig = state::Multisig::unpack(&data).unwrap();
+
+    let msig = MultisigWasm {
+        threshold: multisig.threshold,
+        owners: multisig.owners,
+        pending_transactions: multisig.pending_transactions,
+    };
+
+    return JsValue::from_serde(&msig).unwrap();
+}
+
+#[wasm_bindgen(js_name = "unpackTransaction")]
+pub fn unpack_transaction(data: Vec<u8>) -> JsValue {
+    let transaction = state::Transaction::unpack(&data).unwrap();
+
+    let tx = TransactionWasm {
+        multisig: transaction.multisig,
+        signers: transaction.signers,
+        did_execute: transaction.did_execute,
+    };
+
+    return JsValue::from_serde(&tx).unwrap();
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct MultisigWasm {
+    pub threshold: u64,
+    pub owners: Vec<Pubkey>,
+    pub pending_transactions: Vec<Pubkey>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct TransactionWasm {
+    pub multisig: Pubkey,
+    pub signers: Vec<bool>,
+    pub did_execute: bool,
 }
