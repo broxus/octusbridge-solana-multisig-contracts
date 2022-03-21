@@ -56,13 +56,19 @@ pub fn create_multisig_ix(
 
 #[wasm_bindgen(js_name = "createUpgradeTransaction")]
 pub fn create_upgrade_transaction_ix(
-    funder_pubkey: &Pubkey,
-    proposer_pubkey: &Pubkey,
-    multisig_pubkey: &Pubkey,
-    program_pubkey: &Pubkey,
-    buffer_pubkey: &Pubkey,
+    funder_pubkey: String,
+    proposer_pubkey: String,
+    multisig_pubkey: String,
+    program_pubkey: String,
+    buffer_pubkey: String,
     name: String,
 ) -> JsValue {
+    let funder_pubkey = Pubkey::from_str(funder_pubkey.as_str()).unwrap();
+    let proposer_pubkey = Pubkey::from_str(proposer_pubkey.as_str()).unwrap();
+    let multisig_pubkey = Pubkey::from_str(multisig_pubkey.as_str()).unwrap();
+    let program_pubkey = Pubkey::from_str(program_pubkey.as_str()).unwrap();
+    let buffer_pubkey = Pubkey::from_str(buffer_pubkey.as_str()).unwrap();
+
     let upgrade_ix = bpf_loader_upgradeable::upgrade(
         &program_pubkey,
         &buffer_pubkey,
@@ -99,9 +105,9 @@ pub fn create_upgrade_transaction_ix(
     let ix = Instruction {
         program_id: id(),
         accounts: vec![
-            AccountMeta::new(*funder_pubkey, true),
-            AccountMeta::new(*proposer_pubkey, true),
-            AccountMeta::new(*multisig_pubkey, false),
+            AccountMeta::new(funder_pubkey, true),
+            AccountMeta::new(proposer_pubkey, true),
+            AccountMeta::new(multisig_pubkey, false),
             AccountMeta::new(transaction_pubkey, false),
             AccountMeta::new_readonly(system_program::id(), false),
             AccountMeta::new_readonly(sysvar::rent::id(), false),
@@ -178,7 +184,7 @@ pub fn execute_ix(
 pub fn unpack_multisig(data: Vec<u8>) -> JsValue {
     let multisig = state::Multisig::unpack(&data).unwrap();
 
-    let msig = MultisigWasm {
+    let msig = MultisigMeta {
         threshold: multisig.threshold,
         owners: multisig.owners,
         pending_transactions: multisig.pending_transactions,
@@ -191,8 +197,9 @@ pub fn unpack_multisig(data: Vec<u8>) -> JsValue {
 pub fn unpack_transaction(data: Vec<u8>) -> JsValue {
     let transaction = state::Transaction::unpack(&data).unwrap();
 
-    let tx = TransactionWasm {
+    let tx = TransactionMeta {
         multisig: transaction.multisig,
+        program_id: transaction.program_id,
         signers: transaction.signers,
         did_execute: transaction.did_execute,
     };
@@ -201,15 +208,16 @@ pub fn unpack_transaction(data: Vec<u8>) -> JsValue {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct MultisigWasm {
+pub struct MultisigMeta {
     pub threshold: u64,
     pub owners: Vec<Pubkey>,
     pub pending_transactions: Vec<Pubkey>,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct TransactionWasm {
+pub struct TransactionMeta {
     pub multisig: Pubkey,
+    pub program_id: Pubkey,
     pub signers: Vec<bool>,
     pub did_execute: bool,
 }
