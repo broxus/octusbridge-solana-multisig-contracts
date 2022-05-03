@@ -34,6 +34,10 @@ impl Processor {
                 msg!("Instruction: Create Multisig");
                 Self::process_create_multisig(program_id, accounts, name, owners, threshold)?;
             }
+            MultisigInstruction::UpgradeMultisig { owners, threshold } => {
+                msg!("Instruction: Upgrade Multisig");
+                Self::process_upgrade_multisig(program_id, accounts, owners, threshold)?;
+            }
             MultisigInstruction::CreateTransaction {
                 name,
                 pid,
@@ -117,6 +121,58 @@ impl Processor {
         };
 
         Multisig::pack(multisig, &mut multisig_account_info.data.borrow_mut())?;
+
+        Ok(())
+    }
+
+    fn process_upgrade_multisig(
+        program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        owners: Vec<Pubkey>,
+        threshold: u64,
+    ) -> ProgramResult {
+        let account_info_iter = &mut accounts.iter();
+
+        let multisig_account_info = next_account_info(account_info_iter)?;
+
+        if !multisig_account_info.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        let mut multisig_account_data = Multisig::unpack(&multisig_account_info.data.borrow())?;
+
+        let (multisig_account, _nonce) = Pubkey::find_program_address(
+            &[br"multisig", multisig_account_data.name.as_bytes()],
+            program_id,
+        );
+
+        if multisig_account != *multisig_account_info.key {
+            return Err(ProgramError::InvalidAccountData);
+        }
+
+        require!(
+            multisig_account_data.pending_transactions.is_empty(),
+            MultisigError::PendingTransactionExist
+        );
+
+        assert_unique_owners(&owners)?;
+
+        require!(
+            threshold <= owners.len() as u64
+                && threshold <= MAX_SIGNERS as u64
+                && threshold >= MIN_SIGNERS as u64,
+            MultisigError::InvalidThreshold
+        );
+
+        require!(!owners.is_empty(), MultisigError::InvalidOwnersLen);
+
+        multisig_account_data.owners = owners;
+        multisig_account_data.threshold = threshold;
+
+        Multisig::pack(
+            multisig_account_data,
+            &mut multisig_account_info.data.borrow_mut(),
+        )?;
 
         Ok(())
     }

@@ -54,6 +54,29 @@ pub fn create_multisig_ix(
     return JsValue::from_serde(&ix).unwrap();
 }
 
+#[wasm_bindgen(js_name = "upgradeMultisig")]
+pub fn upgrade_multisig_ix(multisig_pubkey: String, owners: JsValue, threshold: u64) -> JsValue {
+    let multisig_pubkey = Pubkey::from_str(multisig_pubkey.as_str()).unwrap();
+
+    let owners: Vec<String> = owners.into_serde().unwrap();
+    let owners = owners
+        .into_iter()
+        .map(|x| Pubkey::from_str(x.as_str()).unwrap())
+        .collect();
+
+    let data = MultisigInstruction::UpgradeMultisig { owners, threshold }
+        .try_to_vec()
+        .expect("pack");
+
+    let ix = Instruction {
+        program_id: id(),
+        accounts: vec![AccountMeta::new(multisig_pubkey, true)],
+        data,
+    };
+
+    return JsValue::from_serde(&ix).unwrap();
+}
+
 #[wasm_bindgen(js_name = "createTransaction")]
 pub fn create_transaction_ix(
     funder_pubkey: String,
@@ -110,8 +133,8 @@ pub fn create_transaction_ix(
     return JsValue::from_serde(&ix).unwrap();
 }
 
-#[wasm_bindgen(js_name = "upgrade")]
-pub fn upgrade_ix(
+#[wasm_bindgen(js_name = "upgradeProgram")]
+pub fn upgrade_program_ix(
     program_pubkey: String,
     buffer_pubkey: String,
     authority_pubkey: String,

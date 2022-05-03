@@ -5,8 +5,9 @@ authors = ["Broxus team"]
 edition = "2021"
 
 [features]
-test-bpf = []
 no-entrypoint = []
+test-bpf = ["bindings"]
+bindings = ["no-entrypoint"]
 wasm = ["no-entrypoint", "wasm-bindgen"]
 
 [dependencies]

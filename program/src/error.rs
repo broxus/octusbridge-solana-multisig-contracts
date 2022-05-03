@@ -26,6 +26,8 @@ pub enum MultisigError {
     PendingTransactionLimit,
     #[error("Invalid transaction")]
     InvalidTransaction,
+    #[error("Should be no pending transactions")]
+    PendingTransactionExist,
 }
 
 impl From<MultisigError> for ProgramError {

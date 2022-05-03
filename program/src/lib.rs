@@ -9,9 +9,6 @@ pub use self::instruction::*;
 pub use self::processor::*;
 pub use self::state::*;
 
-#[cfg(not(feature = "no-entrypoint"))]
-mod entrypoint;
-
 #[cfg(feature = "wasm")]
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 extern crate wasm_bindgen;
@@ -20,4 +17,13 @@ extern crate wasm_bindgen;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 pub mod wasm;
 
-solana_program::declare_id!("7on7gjKxxymEyQsWvRqT36Sf9SbRworHFUnSPkZ6cSCg");
+#[cfg(feature = "bindings")]
+mod bindings;
+
+#[cfg(feature = "bindings")]
+pub use self::bindings::*;
+
+#[cfg(not(feature = "no-entrypoint"))]
+mod entrypoint;
+
+solana_program::declare_id!("msigXfZQfWVC2YLKqXeg1GUV3qNdU9A9SkJxStdrTYX");
