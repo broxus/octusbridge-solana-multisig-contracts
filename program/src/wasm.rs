@@ -133,6 +133,25 @@ pub fn create_transaction_ix(
     return JsValue::from_serde(&ix).unwrap();
 }
 
+#[wasm_bindgen(js_name = "setProgramAuthority")]
+pub fn set_program_authority_ix(
+    current_authority_pubkey: String,
+    new_authority_pubkey: String,
+    program_address: String,
+) -> JsValue {
+    let current_authority_pubkey = Pubkey::from_str(current_authority_pubkey.as_str()).unwrap();
+    let new_authority_pubkey = Pubkey::from_str(new_authority_pubkey.as_str()).unwrap();
+    let program_address = Pubkey::from_str(program_address.as_str()).unwrap();
+
+    let ix = bpf_loader_upgradeable::set_upgrade_authority(
+        &program_address,
+        &current_authority_pubkey,
+        Some(&new_authority_pubkey),
+    );
+
+    return JsValue::from_serde(&ix).unwrap();
+}
+
 #[wasm_bindgen(js_name = "upgradeProgram")]
 pub fn upgrade_program_ix(
     program_pubkey: String,
