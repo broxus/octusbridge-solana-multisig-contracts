@@ -2,4 +2,4 @@
 dist/
 target/
 program/pkg/
-
+**/*.DS_Store
