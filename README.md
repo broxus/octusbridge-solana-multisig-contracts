@@ -7,6 +7,11 @@ cargo build-bpf --manifest-path=./program/Cargo.toml --bpf-out-dir=dist/program
 
 #### Deploy
 ```bash
+cargo build-bpf --manifest-path=./program/Cargo.toml --bpf-out-dir=dist/program
+```
+
+#### Resuming failed deploy
+```bash
 solana-keygen recover -o dist/program/multisig-buffer-keypair.json
 solana program deploy --buffer dist/program/multisig-buffer-keypair.json dist/program/multisig.so
 ```

@@ -1387,6 +1387,7 @@ name = "multisig"
 version = "0.1.0"
 dependencies = [
  "borsh",
+ "js-sys",
  "multisig-derive",
  "serde",
  "solana-program",
