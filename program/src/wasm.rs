@@ -176,6 +176,29 @@ pub fn upgrade_program_ix(
     return JsValue::from_serde(&ix).handle_error();
 }
 
+#[wasm_bindgen(js_name = "closeProgram")]
+pub fn close_program_ix(
+    program_pubkey: String,
+    authority_pubkey: String,
+    recipient_pubkey: String,
+) -> Result<JsValue, JsValue> {
+    let program_pubkey = Pubkey::from_str(program_pubkey.as_str()).handle_error()?;
+    let authority_pubkey = Pubkey::from_str(authority_pubkey.as_str()).handle_error()?;
+    let recipient_pubkey = Pubkey::from_str(recipient_pubkey.as_str()).handle_error()?;
+
+    let close_pubkey =
+        Pubkey::find_program_address(&[program_pubkey.as_ref()], &bpf_loader_upgradeable::id()).0;
+
+    let ix = bpf_loader_upgradeable::close_any(
+        &close_pubkey,
+        &recipient_pubkey,
+        Some(&authority_pubkey),
+        Some(&program_pubkey),
+    );
+
+    return JsValue::from_serde(&ix).handle_error();
+}
+
 #[wasm_bindgen(js_name = "approve")]
 pub fn approve_ix(
     proposer_pubkey: String,
