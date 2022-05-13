@@ -282,7 +282,9 @@ pub fn unpack_transaction(data: Vec<u8>) -> Result<JsValue, JsValue> {
         multisig: transaction.multisig,
         program_id: transaction.program_id,
         signers: transaction.signers,
+        accounts: transaction.accounts,
         did_execute: transaction.did_execute,
+        data: transaction.data,
     };
 
     return JsValue::from_serde(&tx).handle_error();
@@ -300,7 +302,9 @@ pub struct WasmTransactionMeta {
     pub multisig: Pubkey,
     pub program_id: Pubkey,
     pub signers: Vec<bool>,
+    pub accounts: Vec<TransactionAccount>,
     pub did_execute: bool,
+    pub data: Vec<u8>,
 }
 
 impl<T, E> HandleError for Result<T, E>

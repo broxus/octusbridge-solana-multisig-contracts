@@ -72,7 +72,7 @@ impl From<&Transaction> for Instruction {
     }
 }
 
-#[derive(Debug, BorshSerialize, BorshDeserialize)]
+#[derive(Debug, BorshSerialize, BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct TransactionAccount {
     pub pubkey: Pubkey,
     pub is_signer: bool,
