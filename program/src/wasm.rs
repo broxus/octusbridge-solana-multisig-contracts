@@ -27,7 +27,7 @@ pub fn create_multisig_ix(
         .map(|x| Pubkey::from_str(x.as_str()).unwrap())
         .collect();
 
-    let seed = u128::from_str(&seed).handle_error()?;
+    let seed = uuid::Uuid::from_str(&seed).handle_error()?.as_u128();
     let multisig_pubkey = get_multisig_address(seed);
 
     let data = MultisigInstruction::CreateMultisig {
@@ -108,7 +108,7 @@ pub fn create_transaction_ix(
         is_writable: false,
     });
 
-    let seed = u128::from_str(&seed).handle_error()?;
+    let seed = uuid::Uuid::from_str(&seed).handle_error()?.as_u128();
     let transaction_pubkey = get_transaction_address(seed);
 
     let data = MultisigInstruction::CreateTransaction {
