@@ -44,4 +44,10 @@ pub enum MultisigInstruction {
     /// # Account references
     /// ...
     ExecuteTransaction,
+
+    /// Delete pending transaction
+    ///
+    /// # Account references
+    /// ...
+    DeletePendingTransactions { pending_transactions: Vec<Pubkey> },
 }
