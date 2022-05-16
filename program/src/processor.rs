@@ -1,4 +1,4 @@
-use borsh::BorshDeserialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 
 use solana_program::account_info::{next_account_info, AccountInfo};
 use solana_program::entrypoint::ProgramResult;
@@ -232,22 +232,6 @@ impl Processor {
         let transaction_account_signer_seeds: &[&[_]] =
             &[br"transaction", &seed.to_le_bytes(), &[transaction_nonce]];
 
-        invoke_signed(
-            &system_instruction::create_account(
-                funder_account_info.key,
-                transaction_account_info.key,
-                1.max(rent.minimum_balance(Transaction::LEN)),
-                Transaction::LEN as u64,
-                program_id,
-            ),
-            &[
-                funder_account_info.clone(),
-                transaction_account_info.clone(),
-                system_program_info.clone(),
-            ],
-            &[transaction_account_signer_seeds],
-        )?;
-
         let mut signers = Vec::new();
         signers.resize(multisig_account_data.owners.len(), false);
         signers[owner_index] = true;
@@ -262,7 +246,25 @@ impl Processor {
             signers,
         };
 
-        Transaction::pack(tx, &mut transaction_account_info.data.borrow_mut())?;
+        let data_len = tx.try_to_vec()?.len();
+
+        invoke_signed(
+            &system_instruction::create_account(
+                funder_account_info.key,
+                transaction_account_info.key,
+                1.max(rent.minimum_balance(data_len)),
+                data_len as u64,
+                program_id,
+            ),
+            &[
+                funder_account_info.clone(),
+                transaction_account_info.clone(),
+                system_program_info.clone(),
+            ],
+            &[transaction_account_signer_seeds],
+        )?;
+
+        tx.pack_into_slice(&mut transaction_account_info.data.borrow_mut());
 
         // Add transaction to pending list
         multisig_account_data
@@ -290,7 +292,7 @@ impl Processor {
 
         let multisig_account_data = Multisig::unpack(&multisig_account_info.data.borrow())?;
         let mut transaction_account_data =
-            Transaction::unpack(&transaction_account_info.data.borrow())?;
+            Transaction::unpack_from_slice(&transaction_account_info.data.borrow())?;
 
         if transaction_account_data.multisig != *multisig_account_info.key {
             return Err(ProgramError::InvalidAccountData);
@@ -304,10 +306,7 @@ impl Processor {
 
         transaction_account_data.signers[owner_index] = true;
 
-        Transaction::pack(
-            transaction_account_data,
-            &mut transaction_account_info.data.borrow_mut(),
-        )?;
+        transaction_account_data.pack_into_slice(&mut transaction_account_info.data.borrow_mut());
 
         Ok(())
     }
@@ -332,7 +331,7 @@ impl Processor {
         ];
 
         let mut transaction_account_data =
-            Transaction::unpack(&transaction_account_info.data.borrow())?;
+            Transaction::unpack_from_slice(&transaction_account_info.data.borrow())?;
 
         if transaction_account_data.multisig != *multisig_account_info.key {
             return Err(ProgramError::InvalidAccountData);
@@ -374,10 +373,7 @@ impl Processor {
         // Burn the transaction to ensure one time use.
         transaction_account_data.did_execute = true;
 
-        Transaction::pack(
-            transaction_account_data,
-            &mut transaction_account_info.data.borrow_mut(),
-        )?;
+        transaction_account_data.pack_into_slice(&mut transaction_account_info.data.borrow_mut());
 
         // Remove transaction from pending list
         let transaction_index = multisig_account_data

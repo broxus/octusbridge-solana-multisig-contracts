@@ -101,8 +101,8 @@ async fn test() {
         .expect("get_account")
         .expect("account");
 
-    let transaction_data =
-        multisig::Transaction::unpack(transaction_info.data()).expect("transaction unpack");
+    let transaction_data = multisig::Transaction::unpack_from_slice(transaction_info.data())
+        .expect("transaction unpack");
 
     assert_eq!(transaction_data.is_initialized, true);
     assert_eq!(transaction_data.did_execute, false);
@@ -133,8 +133,8 @@ async fn test() {
         .expect("get_account")
         .expect("account");
 
-    let transaction_data =
-        multisig::Transaction::unpack(transaction_info.data()).expect("transaction unpack");
+    let transaction_data = multisig::Transaction::unpack_from_slice(transaction_info.data())
+        .expect("transaction unpack");
 
     assert_eq!(transaction_data.signers[0], true);
     assert_eq!(transaction_data.signers[1], true);

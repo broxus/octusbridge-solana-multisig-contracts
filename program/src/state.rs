@@ -15,7 +15,7 @@ pub const MAX_SIGNERS: usize = 8;
 pub const MAX_TRANSACTIONS: usize = 15;
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, MultisigPack)]
-#[multisig_pack(length = 5000)]
+#[multisig_pack(length = 985)]
 pub struct Multisig {
     pub is_initialized: bool,
     // Set of custodians
@@ -36,8 +36,7 @@ impl IsInitialized for Multisig {
     }
 }
 
-#[derive(Debug, BorshSerialize, BorshDeserialize, MultisigPack)]
-#[multisig_pack(length = 5000)]
+#[derive(Debug, BorshSerialize, BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct Transaction {
     pub is_initialized: bool,
     // The multisig account this transaction belongs to.
@@ -69,6 +68,19 @@ impl From<&Transaction> for Instruction {
             accounts: tx.accounts.iter().map(Into::into).collect(),
             data: tx.data.clone(),
         }
+    }
+}
+
+impl Transaction {
+    pub fn pack_into_slice(&self, dst: &mut [u8]) {
+        let data = self.try_to_vec().unwrap();
+        let (left, _) = dst.split_at_mut(data.len());
+        left.copy_from_slice(&data);
+    }
+
+    pub fn unpack_from_slice(mut src: &[u8]) -> Result<Self, ProgramError> {
+        let unpacked = Self::deserialize(&mut src)?;
+        Ok(unpacked)
     }
 }
 

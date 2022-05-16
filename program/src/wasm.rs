@@ -15,7 +15,7 @@ use crate::*;
 #[wasm_bindgen(js_name = "createMultisig")]
 pub fn create_multisig_ix(
     funder_pubkey: String,
-    name: String,
+    seed: String,
     owners: JsValue,
     threshold: u64,
 ) -> Result<JsValue, JsValue> {
@@ -27,10 +27,11 @@ pub fn create_multisig_ix(
         .map(|x| Pubkey::from_str(x.as_str()).unwrap())
         .collect();
 
-    let multisig_pubkey = get_multisig_address(&name);
+    let seed = u128::from_str(&seed).handle_error()?;
+    let multisig_pubkey = get_multisig_address(seed);
 
     let data = MultisigInstruction::CreateMultisig {
-        name,
+        seed,
         owners,
         threshold,
     }
@@ -83,7 +84,7 @@ pub fn create_transaction_ix(
     funder_pubkey: String,
     proposer_pubkey: String,
     multisig_pubkey: String,
-    name: String,
+    seed: String,
     instruction: JsValue,
 ) -> Result<JsValue, JsValue> {
     let funder_pubkey = Pubkey::from_str(funder_pubkey.as_str()).handle_error()?;
@@ -107,10 +108,11 @@ pub fn create_transaction_ix(
         is_writable: false,
     });
 
-    let transaction_pubkey = get_transaction_address(&name);
+    let seed = u128::from_str(&seed).handle_error()?;
+    let transaction_pubkey = get_transaction_address(seed);
 
     let data = MultisigInstruction::CreateTransaction {
-        name,
+        seed,
         pid: upgrade_ix.program_id,
         accs: accounts,
         data: upgrade_ix.data,
@@ -233,7 +235,7 @@ pub fn execute_ix(
     let multisig_pubkey = Pubkey::from_str(multisig_pubkey.as_str()).handle_error()?;
     let transaction_pubkey = Pubkey::from_str(transaction_pubkey.as_str()).handle_error()?;
 
-    let transaction_data = Transaction::unpack(&transaction_data).handle_error()?;
+    let transaction_data = Transaction::unpack_from_slice(&transaction_data).handle_error()?;
 
     let mut accounts = vec![
         AccountMeta::new(multisig_pubkey, false),
@@ -276,7 +278,7 @@ pub fn unpack_multisig(data: Vec<u8>) -> Result<JsValue, JsValue> {
 
 #[wasm_bindgen(js_name = "unpackTransaction")]
 pub fn unpack_transaction(data: Vec<u8>) -> Result<JsValue, JsValue> {
-    let transaction = Transaction::unpack(&data).handle_error()?;
+    let transaction = Transaction::unpack_from_slice(&data).handle_error()?;
 
     let tx = WasmTransactionMeta {
         multisig: transaction.multisig,
