@@ -12,10 +12,10 @@ pub const MIN_SIGNERS: usize = 1;
 /// Maximum number of multisignature signers
 pub const MAX_SIGNERS: usize = 8;
 /// Maximum number of pending transactions
-pub const MAX_TRANSACTIONS: usize = 10;
+pub const MAX_TRANSACTIONS: usize = 15;
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, MultisigPack)]
-#[multisig_pack(length = 500)]
+#[multisig_pack(length = 5000)]
 pub struct Multisig {
     pub is_initialized: bool,
     // Set of custodians
@@ -24,8 +24,8 @@ pub struct Multisig {
     pub threshold: u64,
     // Set of pending transactions
     pub pending_transactions: Vec<Pubkey>,
-    // Name to derive PDA
-    pub name: String,
+    // Seed to derive PDA
+    pub seed: u128,
 }
 
 impl Sealed for Multisig {}

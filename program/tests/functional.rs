@@ -20,7 +20,7 @@ async fn test() {
     let (mut banks_client, funder, recent_blockhash) = program_test.start().await;
 
     // Create Multisig
-    let name = "test".to_string();
+    let seed = uuid::Uuid::new_v4().as_u128();
 
     let threshold = 2;
 
@@ -31,7 +31,7 @@ async fn test() {
     let mut transaction = Transaction::new_with_payer(
         &[multisig::create_multisig(
             &funder.pubkey(),
-            name.clone(),
+            seed,
             vec![
                 custodian_1.pubkey(),
                 custodian_2.pubkey(),
@@ -48,7 +48,7 @@ async fn test() {
         .await
         .expect("process_transaction");
 
-    let multisig_address = multisig::get_multisig_address(&name);
+    let multisig_address = multisig::get_multisig_address(seed);
 
     let multisig_info = banks_client
         .get_account(multisig_address)
@@ -75,7 +75,7 @@ async fn test() {
             &funder.pubkey(),
             &custodian_1.pubkey(),
             &multisig_address,
-            name.clone(),
+            seed,
             solana_program::system_instruction::create_account(
                 &funder.pubkey(),
                 &Pubkey::new_unique(),
@@ -93,7 +93,7 @@ async fn test() {
         .await
         .expect("process_transaction");
 
-    let transaction_address = multisig::get_transaction_address(&name);
+    let transaction_address = multisig::get_transaction_address(seed);
 
     let transaction_info = banks_client
         .get_account(transaction_address)

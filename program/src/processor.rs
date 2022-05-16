@@ -27,25 +27,25 @@ impl Processor {
 
         match instruction {
             MultisigInstruction::CreateMultisig {
-                name,
+                seed,
                 owners,
                 threshold,
             } => {
                 msg!("Instruction: Create Multisig");
-                Self::process_create_multisig(program_id, accounts, name, owners, threshold)?;
+                Self::process_create_multisig(program_id, accounts, seed, owners, threshold)?;
             }
             MultisigInstruction::UpgradeMultisig { owners, threshold } => {
                 msg!("Instruction: Upgrade Multisig");
                 Self::process_upgrade_multisig(program_id, accounts, owners, threshold)?;
             }
             MultisigInstruction::CreateTransaction {
-                name,
+                seed,
                 pid,
                 accs,
                 data,
             } => {
                 msg!("Instruction: Create Transaction");
-                Self::process_create_transaction(program_id, accounts, name, pid, accs, data)?;
+                Self::process_create_transaction(program_id, accounts, seed, pid, accs, data)?;
             }
             MultisigInstruction::Approve => {
                 msg!("Instruction: Approve");
@@ -63,7 +63,7 @@ impl Processor {
     fn process_create_multisig(
         program_id: &Pubkey,
         accounts: &[AccountInfo],
-        name: String,
+        seed: u128,
         owners: Vec<Pubkey>,
         threshold: u64,
     ) -> ProgramResult {
@@ -76,14 +76,14 @@ impl Processor {
         let rent = &Rent::from_account_info(rent_sysvar_info)?;
 
         let (multisig_account, multisig_nonce) =
-            Pubkey::find_program_address(&[br"multisig", name.as_bytes()], program_id);
+            Pubkey::find_program_address(&[br"multisig", &seed.to_le_bytes()], program_id);
 
         if multisig_account != *multisig_account_info.key {
             return Err(ProgramError::InvalidAccountData);
         }
 
         let multisig_account_signer_seeds: &[&[_]] =
-            &[br"multisig", name.as_bytes(), &[multisig_nonce]];
+            &[br"multisig", &seed.to_le_bytes(), &[multisig_nonce]];
 
         assert_unique_owners(&owners)?;
 
@@ -117,7 +117,7 @@ impl Processor {
             owners,
             threshold,
             pending_transactions: vec![],
-            name,
+            seed,
         };
 
         Multisig::pack(multisig, &mut multisig_account_info.data.borrow_mut())?;
@@ -142,7 +142,7 @@ impl Processor {
         let mut multisig_account_data = Multisig::unpack(&multisig_account_info.data.borrow())?;
 
         let (multisig_account, _nonce) = Pubkey::find_program_address(
-            &[br"multisig", multisig_account_data.name.as_bytes()],
+            &[br"multisig", &multisig_account_data.seed.to_le_bytes()],
             program_id,
         );
 
@@ -180,7 +180,7 @@ impl Processor {
     fn process_create_transaction(
         program_id: &Pubkey,
         accounts: &[AccountInfo],
-        name: String,
+        seed: u128,
         pid: Pubkey,
         accs: Vec<TransactionAccount>,
         data: Vec<u8>,
@@ -213,14 +213,14 @@ impl Processor {
             .ok_or(MultisigError::InvalidOwner)?;
 
         let (transaction_account, transaction_nonce) =
-            Pubkey::find_program_address(&[br"transaction", name.as_bytes()], program_id);
+            Pubkey::find_program_address(&[br"transaction", &seed.to_le_bytes()], program_id);
 
         if transaction_account != *transaction_account_info.key {
             return Err(ProgramError::InvalidAccountData);
         }
 
         let transaction_account_signer_seeds: &[&[_]] =
-            &[br"transaction", name.as_bytes(), &[transaction_nonce]];
+            &[br"transaction", &seed.to_le_bytes(), &[transaction_nonce]];
 
         invoke_signed(
             &system_instruction::create_account(
@@ -311,13 +311,13 @@ impl Processor {
         let mut multisig_account_data = Multisig::unpack(&multisig_account_info.data.borrow())?;
 
         let (_account, multisig_nonce) = Pubkey::find_program_address(
-            &[br"multisig", multisig_account_data.name.as_bytes()],
+            &[br"multisig", &multisig_account_data.seed.to_le_bytes()],
             program_id,
         );
 
         let multisig_account_seeds: &[&[_]] = &[
             br"multisig",
-            multisig_account_data.name.as_bytes(),
+            &multisig_account_data.seed.to_le_bytes(),
             &[multisig_nonce],
         ];
 

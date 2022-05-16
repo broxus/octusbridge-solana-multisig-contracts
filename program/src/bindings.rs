@@ -7,14 +7,14 @@ use crate::*;
 
 pub fn create_multisig(
     funder_pubkey: &Pubkey,
-    name: String,
+    seed: u128,
     owners: Vec<Pubkey>,
     threshold: u64,
 ) -> Instruction {
-    let multisig_pubkey = get_multisig_address(&name);
+    let multisig_pubkey = get_multisig_address(seed);
 
     let data = MultisigInstruction::CreateMultisig {
-        name,
+        seed,
         owners,
         threshold,
     }
@@ -53,7 +53,7 @@ pub fn create_transaction(
     funder_pubkey: &Pubkey,
     proposer_pubkey: &Pubkey,
     multisig_pubkey: &Pubkey,
-    name: String,
+    seed: u128,
     ix: Instruction,
 ) -> Instruction {
     let mut accounts = ix
@@ -71,10 +71,10 @@ pub fn create_transaction(
         is_writable: false,
     });
 
-    let transaction_pubkey = get_transaction_address(&name);
+    let transaction_pubkey = get_transaction_address(seed);
 
     let data = MultisigInstruction::CreateTransaction {
-        name,
+        seed,
         pid: ix.program_id,
         accs: accounts,
         data: ix.data,
@@ -143,10 +143,10 @@ pub fn execute_transaction(
     }
 }
 
-pub fn get_multisig_address(name: &str) -> Pubkey {
-    Pubkey::find_program_address(&[br"multisig", name.as_bytes()], &id()).0
+pub fn get_multisig_address(seed: u128) -> Pubkey {
+    Pubkey::find_program_address(&[br"multisig", &seed.to_le_bytes()], &id()).0
 }
 
-pub fn get_transaction_address(name: &str) -> Pubkey {
-    Pubkey::find_program_address(&[br"transaction", name.as_bytes()], &id()).0
+pub fn get_transaction_address(seed: u128) -> Pubkey {
+    Pubkey::find_program_address(&[br"transaction", &seed.to_le_bytes()], &id()).0
 }

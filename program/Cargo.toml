@@ -24,6 +24,7 @@ multisig-derive = { path = "../multisig-derive" }
 [dev-dependencies]
 solana-program-test = "1.10"
 solana-sdk = "1.10"
+uuid = { version = "0.8", features = ["v4", "serde"] }
 
 [lib]
 crate-type = ["cdylib", "lib"]
