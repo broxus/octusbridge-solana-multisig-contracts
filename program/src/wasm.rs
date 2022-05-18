@@ -226,6 +226,39 @@ pub fn approve_ix(
     return JsValue::from_serde(&ix).handle_error();
 }
 
+#[wasm_bindgen(js_name = "deletePendingTransactions")]
+pub fn delete_pending_transactions_ix(
+    author_pubkey: String,
+    multisig_pubkey: String,
+    pending_transactions: JsValue,
+) -> Result<JsValue, JsValue> {
+    let author_pubkey = Pubkey::from_str(author_pubkey.as_str()).handle_error()?;
+    let multisig_pubkey = Pubkey::from_str(multisig_pubkey.as_str()).handle_error()?;
+
+    let pending_transactions: Vec<String> = pending_transactions.into_serde().handle_error()?;
+    let pending_transactions = pending_transactions
+        .into_iter()
+        .map(|x| Pubkey::from_str(x.as_str()).unwrap())
+        .collect();
+
+    let data = MultisigInstruction::DeletePendingTransactions {
+        pending_transactions,
+    }
+    .try_to_vec()
+    .expect("pack");
+
+    let ix = Instruction {
+        program_id: id(),
+        accounts: vec![
+            AccountMeta::new(author_pubkey, true),
+            AccountMeta::new(multisig_pubkey, false),
+        ],
+        data,
+    };
+
+    return JsValue::from_serde(&ix).handle_error();
+}
+
 #[wasm_bindgen(js_name = "execute")]
 pub fn execute_ix(
     multisig_pubkey: String,

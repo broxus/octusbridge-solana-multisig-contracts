@@ -143,6 +143,27 @@ pub fn execute_transaction(
     }
 }
 
+pub fn delete_pending_transactions(
+    author_pubkey: &Pubkey,
+    multisig_pubkey: &Pubkey,
+    pending_transactions: Vec<Pubkey>,
+) -> Instruction {
+    let data = MultisigInstruction::DeletePendingTransactions {
+        pending_transactions,
+    }
+    .try_to_vec()
+    .expect("pack");
+
+    Instruction {
+        program_id: id(),
+        accounts: vec![
+            AccountMeta::new(*author_pubkey, true),
+            AccountMeta::new(*multisig_pubkey, false),
+        ],
+        data,
+    }
+}
+
 pub fn get_multisig_address(seed: u128) -> Pubkey {
     Pubkey::find_program_address(&[br"multisig", &seed.to_le_bytes()], &id()).0
 }
