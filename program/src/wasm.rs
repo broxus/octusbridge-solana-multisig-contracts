@@ -201,6 +201,26 @@ pub fn close_program_ix(
     return JsValue::from_serde(&ix).handle_error();
 }
 
+#[wasm_bindgen(js_name = "closeBuffer")]
+pub fn close_buffer_ix(
+    buffer_pubkey: String,
+    authority_pubkey: String,
+    recipient_pubkey: String,
+) -> Result<JsValue, JsValue> {
+    let buffer_pubkey = Pubkey::from_str(buffer_pubkey.as_str()).handle_error()?;
+    let authority_pubkey = Pubkey::from_str(authority_pubkey.as_str()).handle_error()?;
+    let recipient_pubkey = Pubkey::from_str(recipient_pubkey.as_str()).handle_error()?;
+
+    let ix = bpf_loader_upgradeable::close_any(
+        &buffer_pubkey,
+        &recipient_pubkey,
+        Some(&authority_pubkey),
+        None,
+    );
+
+    return JsValue::from_serde(&ix).handle_error();
+}
+
 #[wasm_bindgen(js_name = "approve")]
 pub fn approve_ix(
     proposer_pubkey: String,
