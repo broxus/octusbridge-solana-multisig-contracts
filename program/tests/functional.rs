@@ -69,7 +69,9 @@ async fn test() {
         ]
     );
 
-    // Create Transaction with empty instruction
+    let seed = uuid::Uuid::new_v4().as_u128();
+
+    // Create Transaction instruction
     let mut transaction = Transaction::new_with_payer(
         &[multisig::create_transaction(
             &funder.pubkey(),

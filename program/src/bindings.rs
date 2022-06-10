@@ -33,22 +33,6 @@ pub fn create_multisig(
     }
 }
 
-pub fn upgrade_multisig(
-    multisig_pubkey: &Pubkey,
-    owners: Vec<Pubkey>,
-    threshold: u64,
-) -> Instruction {
-    let data = MultisigInstruction::UpgradeMultisig { owners, threshold }
-        .try_to_vec()
-        .expect("pack");
-
-    Instruction {
-        program_id: id(),
-        accounts: vec![AccountMeta::new(*multisig_pubkey, true)],
-        data,
-    }
-}
-
 pub fn create_transaction(
     funder_pubkey: &Pubkey,
     proposer_pubkey: &Pubkey,
@@ -143,23 +127,19 @@ pub fn execute_transaction(
     }
 }
 
-pub fn delete_pending_transactions(
-    author_pubkey: &Pubkey,
+pub fn delete_pending_transaction(
     multisig_pubkey: &Pubkey,
-    pending_transactions: Vec<Pubkey>,
+    pending_transaction: Pubkey,
 ) -> Instruction {
-    let data = MultisigInstruction::DeletePendingTransactions {
-        pending_transactions,
+    let data = MultisigInstruction::DeletePendingTransaction {
+        pending_transaction,
     }
     .try_to_vec()
     .expect("pack");
 
     Instruction {
         program_id: id(),
-        accounts: vec![
-            AccountMeta::new(*author_pubkey, true),
-            AccountMeta::new(*multisig_pubkey, false),
-        ],
+        accounts: vec![AccountMeta::new(*multisig_pubkey, true)],
         data,
     }
 }

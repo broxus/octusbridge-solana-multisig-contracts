@@ -28,6 +28,12 @@ pub enum MultisigError {
     InvalidTransaction,
     #[error("Should be no pending transactions")]
     PendingTransactionExist,
+    #[error("Owners overflow")]
+    OwnersOverflow,
+    #[error("Owners lack off")]
+    OwnersLackOff,
+    #[error("Last transaction should be 'DeletePendingTransactions'")]
+    InvalidLastTransaction,
 }
 
 impl From<MultisigError> for ProgramError {

@@ -23,7 +23,7 @@ impl Processor {
         accounts: &[AccountInfo],
         instruction_data: &[u8],
     ) -> ProgramResult {
-        let instruction = MultisigInstruction::try_from_slice(instruction_data).unwrap();
+        let instruction = MultisigInstruction::try_from_slice(instruction_data)?;
 
         match instruction {
             MultisigInstruction::CreateMultisig {
@@ -33,10 +33,6 @@ impl Processor {
             } => {
                 msg!("Instruction: Create Multisig");
                 Self::process_create_multisig(program_id, accounts, seed, owners, threshold)?;
-            }
-            MultisigInstruction::UpgradeMultisig { owners, threshold } => {
-                msg!("Instruction: Upgrade Multisig");
-                Self::process_upgrade_multisig(program_id, accounts, owners, threshold)?;
             }
             MultisigInstruction::CreateTransaction {
                 seed,
@@ -55,14 +51,26 @@ impl Processor {
                 msg!("Instruction: Execute Transaction");
                 Self::process_execute_transaction(program_id, accounts)?;
             }
-            MultisigInstruction::DeletePendingTransactions {
-                pending_transactions,
+            MultisigInstruction::AddOwner { owner } => {
+                msg!("Instruction: Add Owner");
+                Self::process_add_owner(program_id, accounts, owner)?;
+            }
+            MultisigInstruction::DeleteOwner { owner } => {
+                msg!("Instruction: Delete Owner");
+                Self::process_delete_owner(program_id, accounts, owner)?;
+            }
+            MultisigInstruction::UpdateThreshold { threshold } => {
+                msg!("Instruction: Update Threshold");
+                Self::process_update_threshold(program_id, accounts, threshold)?;
+            }
+            MultisigInstruction::DeletePendingTransaction {
+                pending_transaction,
             } => {
                 msg!("Instruction: Delete Pending Transactions");
                 Self::process_delete_pending_transaction(
                     program_id,
                     accounts,
-                    pending_transactions,
+                    pending_transaction,
                 )?;
             }
         };
@@ -135,10 +143,89 @@ impl Processor {
         Ok(())
     }
 
-    fn process_upgrade_multisig(
+    fn process_add_owner(
         program_id: &Pubkey,
         accounts: &[AccountInfo],
-        owners: Vec<Pubkey>,
+        owner: Pubkey,
+    ) -> ProgramResult {
+        let account_info_iter = &mut accounts.iter();
+
+        let multisig_account_info = next_account_info(account_info_iter)?;
+
+        if !multisig_account_info.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        let mut multisig_account_data = Multisig::unpack(&multisig_account_info.data.borrow())?;
+
+        let (multisig_account, _nonce) = Pubkey::find_program_address(
+            &[br"multisig", &multisig_account_data.seed.to_le_bytes()],
+            program_id,
+        );
+
+        if multisig_account != *multisig_account_info.key {
+            return Err(ProgramError::InvalidAccountData);
+        }
+
+        require!(
+            multisig_account_data.owners.len() + 1 <= MAX_SIGNERS,
+            MultisigError::OwnersOverflow
+        );
+
+        multisig_account_data.owners.push(owner);
+
+        Multisig::pack(
+            multisig_account_data,
+            &mut multisig_account_info.data.borrow_mut(),
+        )?;
+
+        Ok(())
+    }
+
+    fn process_delete_owner(
+        program_id: &Pubkey,
+        accounts: &[AccountInfo],
+        owner: Pubkey,
+    ) -> ProgramResult {
+        let account_info_iter = &mut accounts.iter();
+
+        let multisig_account_info = next_account_info(account_info_iter)?;
+
+        if !multisig_account_info.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        let mut multisig_account_data = Multisig::unpack(&multisig_account_info.data.borrow())?;
+
+        let (multisig_account, _nonce) = Pubkey::find_program_address(
+            &[br"multisig", &multisig_account_data.seed.to_le_bytes()],
+            program_id,
+        );
+
+        if multisig_account != *multisig_account_info.key {
+            return Err(ProgramError::InvalidAccountData);
+        }
+
+        require!(
+            multisig_account_data.owners.len() - 1 <= MIN_SIGNERS
+                && multisig_account_data.owners.len() - 1
+                    >= multisig_account_data.threshold as usize,
+            MultisigError::OwnersLackOff
+        );
+
+        multisig_account_data.owners.retain(|x| *x != owner);
+
+        Multisig::pack(
+            multisig_account_data,
+            &mut multisig_account_info.data.borrow_mut(),
+        )?;
+
+        Ok(())
+    }
+
+    fn process_update_threshold(
+        program_id: &Pubkey,
+        accounts: &[AccountInfo],
         threshold: u64,
     ) -> ProgramResult {
         let account_info_iter = &mut accounts.iter();
@@ -161,22 +248,10 @@ impl Processor {
         }
 
         require!(
-            multisig_account_data.pending_transactions.is_empty(),
-            MultisigError::PendingTransactionExist
-        );
-
-        assert_unique_owners(&owners)?;
-
-        require!(
-            threshold <= owners.len() as u64
-                && threshold <= MAX_SIGNERS as u64
-                && threshold >= MIN_SIGNERS as u64,
+            multisig_account_data.owners.len() >= threshold as usize,
             MultisigError::InvalidThreshold
         );
 
-        require!(!owners.is_empty(), MultisigError::InvalidOwnersLen);
-
-        multisig_account_data.owners = owners;
         multisig_account_data.threshold = threshold;
 
         Multisig::pack(
@@ -215,6 +290,22 @@ impl Processor {
             multisig_account_data.pending_transactions.len() <= MAX_TRANSACTIONS,
             MultisigError::InvalidThreshold
         );
+
+        if multisig_account_data.pending_transactions.len() + 1 == MAX_TRANSACTIONS {
+            if *program_id != pid {
+                return Err(MultisigError::InvalidLastTransaction.into());
+            }
+
+            let instruction = MultisigInstruction::try_from_slice(&data)?;
+            if !matches!(
+                instruction,
+                MultisigInstruction::DeletePendingTransaction {
+                    pending_transaction: _
+                }
+            ) {
+                return Err(MultisigError::InvalidLastTransaction.into());
+            }
+        }
 
         let owner_index = multisig_account_data
             .owners
@@ -395,38 +486,32 @@ impl Processor {
     }
 
     fn process_delete_pending_transaction(
-        _program_id: &Pubkey,
+        program_id: &Pubkey,
         accounts: &[AccountInfo],
-        pending_transactions: Vec<Pubkey>,
+        pending_transaction: Pubkey,
     ) -> ProgramResult {
         let account_info_iter = &mut accounts.iter();
 
-        let proposer_account_info = next_account_info(account_info_iter)?;
         let multisig_account_info = next_account_info(account_info_iter)?;
 
-        if !proposer_account_info.is_signer {
+        if !multisig_account_info.is_signer {
             return Err(ProgramError::MissingRequiredSignature);
         }
 
         let mut multisig_account_data = Multisig::unpack(&multisig_account_info.data.borrow())?;
 
-        multisig_account_data
-            .owners
-            .iter()
-            .position(|value| value == proposer_account_info.key)
-            .ok_or(MultisigError::InvalidOwner)?;
+        let (multisig_account, _nonce) = Pubkey::find_program_address(
+            &[br"multisig", &multisig_account_data.seed.to_le_bytes()],
+            program_id,
+        );
 
-        for pending_transaction in pending_transactions {
-            let transaction_index = multisig_account_data
-                .pending_transactions
-                .iter()
-                .position(|value| value == &pending_transaction)
-                .ok_or(MultisigError::InvalidTransaction)?;
-
-            multisig_account_data
-                .pending_transactions
-                .remove(transaction_index);
+        if multisig_account != *multisig_account_info.key {
+            return Err(ProgramError::InvalidAccountData);
         }
+
+        multisig_account_data
+            .pending_transactions
+            .retain(|x| *x != pending_transaction);
 
         Multisig::pack(
             multisig_account_data,

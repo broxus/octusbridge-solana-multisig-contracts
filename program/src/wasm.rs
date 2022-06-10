@@ -52,21 +52,47 @@ pub fn create_multisig_ix(
     return JsValue::from_serde(&ix).handle_error();
 }
 
-#[wasm_bindgen(js_name = "upgradeMultisig")]
-pub fn upgrade_multisig_ix(
-    multisig_pubkey: String,
-    owners: JsValue,
-    threshold: u64,
-) -> Result<JsValue, JsValue> {
+#[wasm_bindgen(js_name = "addOwner")]
+pub fn add_owner_ix(multisig_pubkey: String, owner: String) -> Result<JsValue, JsValue> {
+    let multisig_pubkey = Pubkey::from_str(multisig_pubkey.as_str()).handle_error()?;
+    let owner = Pubkey::from_str(owner.as_str()).handle_error()?;
+
+    let data = MultisigInstruction::AddOwner { owner }
+        .try_to_vec()
+        .expect("pack");
+
+    let ix = Instruction {
+        program_id: id(),
+        accounts: vec![AccountMeta::new(multisig_pubkey, true)],
+        data,
+    };
+
+    return JsValue::from_serde(&ix).handle_error();
+}
+
+#[wasm_bindgen(js_name = "deleteOwner")]
+pub fn delete_owner_ix(multisig_pubkey: String, owner: String) -> Result<JsValue, JsValue> {
+    let multisig_pubkey = Pubkey::from_str(multisig_pubkey.as_str()).handle_error()?;
+    let owner = Pubkey::from_str(owner.as_str()).handle_error()?;
+
+    let data = MultisigInstruction::DeleteOwner { owner }
+        .try_to_vec()
+        .expect("pack");
+
+    let ix = Instruction {
+        program_id: id(),
+        accounts: vec![AccountMeta::new(multisig_pubkey, true)],
+        data,
+    };
+
+    return JsValue::from_serde(&ix).handle_error();
+}
+
+#[wasm_bindgen(js_name = "updateThreshold")]
+pub fn update_threshold_ix(multisig_pubkey: String, threshold: u64) -> Result<JsValue, JsValue> {
     let multisig_pubkey = Pubkey::from_str(multisig_pubkey.as_str()).handle_error()?;
 
-    let owners: Vec<String> = owners.into_serde().handle_error()?;
-    let owners = owners
-        .into_iter()
-        .map(|x| Pubkey::from_str(x.as_str()).unwrap())
-        .collect();
-
-    let data = MultisigInstruction::UpgradeMultisig { owners, threshold }
+    let data = MultisigInstruction::UpdateThreshold { threshold }
         .try_to_vec()
         .expect("pack");
 
@@ -247,32 +273,22 @@ pub fn approve_ix(
 }
 
 #[wasm_bindgen(js_name = "deletePendingTransactions")]
-pub fn delete_pending_transactions_ix(
-    author_pubkey: String,
+pub fn delete_pending_transaction_ix(
     multisig_pubkey: String,
-    pending_transactions: JsValue,
+    pending_transaction: String,
 ) -> Result<JsValue, JsValue> {
-    let author_pubkey = Pubkey::from_str(author_pubkey.as_str()).handle_error()?;
     let multisig_pubkey = Pubkey::from_str(multisig_pubkey.as_str()).handle_error()?;
+    let pending_transaction = Pubkey::from_str(pending_transaction.as_str()).handle_error()?;
 
-    let pending_transactions: Vec<String> = pending_transactions.into_serde().handle_error()?;
-    let pending_transactions = pending_transactions
-        .into_iter()
-        .map(|x| Pubkey::from_str(x.as_str()).unwrap())
-        .collect();
-
-    let data = MultisigInstruction::DeletePendingTransactions {
-        pending_transactions,
+    let data = MultisigInstruction::DeletePendingTransaction {
+        pending_transaction,
     }
     .try_to_vec()
     .expect("pack");
 
     let ix = Instruction {
         program_id: id(),
-        accounts: vec![
-            AccountMeta::new(author_pubkey, true),
-            AccountMeta::new(multisig_pubkey, false),
-        ],
+        accounts: vec![AccountMeta::new(multisig_pubkey, true)],
         data,
     };
 

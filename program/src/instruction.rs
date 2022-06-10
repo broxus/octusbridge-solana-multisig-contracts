@@ -15,11 +15,23 @@ pub enum MultisigInstruction {
         threshold: u64,
     },
 
-    /// Upgrade multisig account with a new set of owners and a threshold
+    /// Add a new account to custodian list
     ///
     /// # Account references
     /// ...
-    UpgradeMultisig { owners: Vec<Pubkey>, threshold: u64 },
+    AddOwner { owner: Pubkey },
+
+    /// Delete account from custodian list
+    ///
+    /// # Account references
+    /// ...
+    DeleteOwner { owner: Pubkey },
+
+    /// Update threshold
+    ///
+    /// # Account references
+    /// ...
+    UpdateThreshold { threshold: u64 },
 
     /// Creates a new transaction account, automatically signed by the creator,
     /// which must be one of the owners of the multisig
@@ -49,5 +61,5 @@ pub enum MultisigInstruction {
     ///
     /// # Account references
     /// ...
-    DeletePendingTransactions { pending_transactions: Vec<Pubkey> },
+    DeletePendingTransaction { pending_transaction: Pubkey },
 }
