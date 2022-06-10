@@ -272,7 +272,7 @@ pub fn approve_ix(
     return JsValue::from_serde(&ix).handle_error();
 }
 
-#[wasm_bindgen(js_name = "deletePendingTransactions")]
+#[wasm_bindgen(js_name = "deletePendingTransaction")]
 pub fn delete_pending_transaction_ix(
     multisig_pubkey: String,
     pending_transaction: String,
