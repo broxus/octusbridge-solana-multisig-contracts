@@ -117,9 +117,9 @@ pub fn create_transaction_ix(
     let proposer_pubkey = Pubkey::from_str(proposer_pubkey.as_str()).handle_error()?;
     let multisig_pubkey = Pubkey::from_str(multisig_pubkey.as_str()).handle_error()?;
 
-    let upgrade_ix: Instruction = instruction.into_serde().handle_error()?;
+    let ix: Instruction = instruction.into_serde().handle_error()?;
 
-    let mut accounts = upgrade_ix
+    let mut accounts = ix
         .accounts
         .into_iter()
         .map(|acc| TransactionAccount {
@@ -129,7 +129,7 @@ pub fn create_transaction_ix(
         })
         .collect::<Vec<_>>();
     accounts.push(TransactionAccount {
-        pubkey: upgrade_ix.program_id,
+        pubkey: ix.program_id,
         is_signer: false,
         is_writable: false,
     });
@@ -139,9 +139,9 @@ pub fn create_transaction_ix(
 
     let data = MultisigInstruction::CreateTransaction {
         seed,
-        pid: upgrade_ix.program_id,
+        pid: ix.program_id,
         accs: accounts,
-        data: upgrade_ix.data,
+        data: ix.data,
     }
     .try_to_vec()
     .expect("pack");

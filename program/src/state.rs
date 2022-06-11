@@ -10,12 +10,12 @@ use multisig_derive::MultisigPack;
 /// Minimum number of multisignature signers
 pub const MIN_SIGNERS: usize = 1;
 /// Maximum number of multisignature signers
-pub const MAX_SIGNERS: usize = 8;
+pub const MAX_SIGNERS: usize = 10;
 /// Maximum number of pending transactions
 pub const MAX_TRANSACTIONS: usize = 15;
 
 #[derive(Debug, BorshSerialize, BorshDeserialize, MultisigPack)]
-#[multisig_pack(length = 985)]
+#[multisig_pack(length = 833)]
 pub struct Multisig {
     pub is_initialized: bool,
     // Set of custodians
@@ -84,7 +84,7 @@ impl Transaction {
     }
 }
 
-#[derive(Debug, BorshSerialize, BorshDeserialize, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, serde::Serialize, serde::Deserialize)]
 pub struct TransactionAccount {
     pub pubkey: Pubkey,
     pub is_signer: bool,

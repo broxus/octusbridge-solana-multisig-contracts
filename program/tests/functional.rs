@@ -2,7 +2,6 @@
 
 use solana_program::program_pack::Pack;
 use solana_program::pubkey::Pubkey;
-use solana_program::rent::Rent;
 use solana_program_test::{processor, tokio, ProgramTest};
 use solana_sdk::account::ReadableAccount;
 use solana_sdk::signature::{Keypair, Signer};
@@ -69,7 +68,148 @@ async fn test() {
         ]
     );
 
+    // Add owners
+    for _ in 0..7 {
+        let seed = uuid::Uuid::new_v4().as_u128();
+
+        let owner = Pubkey::new_unique();
+
+        // Create Transaction instruction
+        let mut transaction = Transaction::new_with_payer(
+            &[multisig::create_transaction(
+                &funder.pubkey(),
+                &custodian_1.pubkey(),
+                &multisig_address,
+                seed,
+                multisig::add_owner(&multisig_address, owner),
+            )],
+            Some(&funder.pubkey()),
+        );
+        transaction.sign(&[&funder, &custodian_1], recent_blockhash);
+
+        banks_client
+            .process_transaction(transaction)
+            .await
+            .expect("process_transaction");
+
+        let transaction_address = multisig::get_transaction_address(seed);
+
+        let transaction_info = banks_client
+            .get_account(transaction_address)
+            .await
+            .expect("get_account")
+            .expect("account");
+
+        let transaction_data = multisig::Transaction::unpack_from_slice(transaction_info.data())
+            .expect("transaction unpack");
+
+        assert_eq!(transaction_data.is_initialized, true);
+        assert_eq!(transaction_data.did_execute, false);
+        assert_eq!(transaction_data.program_id, multisig::id());
+
+        // Approve
+        let mut transaction = Transaction::new_with_payer(
+            &[multisig::approve(
+                &custodian_2.pubkey(),
+                &multisig_address,
+                &transaction_address,
+            )],
+            Some(&funder.pubkey()),
+        );
+        transaction.sign(&[&funder, &custodian_2], recent_blockhash);
+
+        banks_client
+            .process_transaction(transaction)
+            .await
+            .expect("process_transaction");
+
+        let transaction_info = banks_client
+            .get_account(transaction_address)
+            .await
+            .expect("get_account")
+            .expect("account");
+
+        let transaction_data = multisig::Transaction::unpack_from_slice(transaction_info.data())
+            .expect("transaction unpack");
+
+        assert_eq!(transaction_data.signers[0], true);
+        assert_eq!(transaction_data.signers[1], true);
+        assert_eq!(transaction_data.signers[2], false);
+
+        // Execute
+        let accounts = transaction_data.accounts;
+
+        let mut transaction = Transaction::new_with_payer(
+            &[multisig::execute_transaction(
+                &multisig_address,
+                &transaction_address,
+                accounts,
+            )],
+            Some(&funder.pubkey()),
+        );
+
+        transaction.sign(&[&funder], recent_blockhash);
+
+        banks_client
+            .process_transaction(transaction)
+            .await
+            .expect("process_transaction");
+
+        let transaction_info = banks_client
+            .get_account(transaction_address)
+            .await
+            .expect("get_account")
+            .expect("account");
+
+        let transaction_data = multisig::Transaction::unpack_from_slice(transaction_info.data())
+            .expect("transaction unpack");
+
+        assert_eq!(transaction_data.did_execute, true);
+    }
+
+    // Check multisig owners
+    let multisig_info = banks_client
+        .get_account(multisig_address)
+        .await
+        .expect("get_account")
+        .expect("account");
+
+    let multisig_data = multisig::Multisig::unpack(multisig_info.data()).expect("multisig unpack");
+
+    assert_eq!(multisig_data.owners.len(), multisig::MAX_SIGNERS);
+
+    // Create pending transactions
+    let mut pending_transactions = Vec::new();
+
+    for _ in 0..multisig::MAX_TRANSACTIONS - 1 {
+        let owner = Pubkey::new_unique();
+        let seed = uuid::Uuid::new_v4().as_u128();
+
+        // Create Transaction instruction
+        let mut transaction = Transaction::new_with_payer(
+            &[multisig::create_transaction(
+                &funder.pubkey(),
+                &custodian_1.pubkey(),
+                &multisig_address,
+                seed,
+                multisig::add_owner(&multisig_address, owner),
+            )],
+            Some(&funder.pubkey()),
+        );
+        transaction.sign(&[&funder, &custodian_1], recent_blockhash);
+
+        banks_client
+            .process_transaction(transaction)
+            .await
+            .expect("process_transaction");
+
+        let transaction_address = multisig::get_transaction_address(seed);
+        pending_transactions.push(transaction_address);
+    }
+
+    // Delete last pending transaction
     let seed = uuid::Uuid::new_v4().as_u128();
+    let pending_transaction = *pending_transactions.last().unwrap();
 
     // Create Transaction instruction
     let mut transaction = Transaction::new_with_payer(
@@ -78,13 +218,7 @@ async fn test() {
             &custodian_1.pubkey(),
             &multisig_address,
             seed,
-            solana_program::system_instruction::create_account(
-                &funder.pubkey(),
-                &Pubkey::new_unique(),
-                1.max(Rent::default().minimum_balance(0)),
-                0,
-                &multisig::id(),
-            ),
+            multisig::delete_pending_transaction(&multisig_address, pending_transaction),
         )],
         Some(&funder.pubkey()),
     );
@@ -95,25 +229,23 @@ async fn test() {
         .await
         .expect("process_transaction");
 
-    let transaction_address = multisig::get_transaction_address(seed);
-
-    let transaction_info = banks_client
-        .get_account(transaction_address)
+    // Check multisig pending transactions
+    let multisig_info = banks_client
+        .get_account(multisig_address)
         .await
         .expect("get_account")
         .expect("account");
 
-    let transaction_data = multisig::Transaction::unpack_from_slice(transaction_info.data())
-        .expect("transaction unpack");
+    let multisig_data = multisig::Multisig::unpack(multisig_info.data()).expect("multisig unpack");
 
-    assert_eq!(transaction_data.is_initialized, true);
-    assert_eq!(transaction_data.did_execute, false);
     assert_eq!(
-        transaction_data.program_id,
-        solana_program::system_program::id()
+        multisig_data.pending_transactions.len(),
+        multisig::MAX_TRANSACTIONS
     );
 
     // Approve
+    let transaction_address = multisig::get_transaction_address(seed);
+
     let mut transaction = Transaction::new_with_payer(
         &[multisig::approve(
             &custodian_2.pubkey(),
@@ -129,6 +261,7 @@ async fn test() {
         .await
         .expect("process_transaction");
 
+    // Execute
     let transaction_info = banks_client
         .get_account(transaction_address)
         .await
@@ -138,7 +271,35 @@ async fn test() {
     let transaction_data = multisig::Transaction::unpack_from_slice(transaction_info.data())
         .expect("transaction unpack");
 
-    assert_eq!(transaction_data.signers[0], true);
-    assert_eq!(transaction_data.signers[1], true);
-    assert_eq!(transaction_data.signers[2], false);
+    let accounts = transaction_data.accounts;
+
+    let mut transaction = Transaction::new_with_payer(
+        &[multisig::execute_transaction(
+            &multisig_address,
+            &transaction_address,
+            accounts,
+        )],
+        Some(&funder.pubkey()),
+    );
+
+    transaction.sign(&[&funder], recent_blockhash);
+
+    banks_client
+        .process_transaction(transaction)
+        .await
+        .expect("process_transaction");
+
+    // Check multisig pending transactions
+    let multisig_info = banks_client
+        .get_account(multisig_address)
+        .await
+        .expect("get_account")
+        .expect("account");
+
+    let multisig_data = multisig::Multisig::unpack(multisig_info.data()).expect("multisig unpack");
+
+    assert_eq!(
+        multisig_data.pending_transactions.len(),
+        multisig::MAX_TRANSACTIONS - 2
+    );
 }

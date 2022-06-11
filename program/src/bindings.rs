@@ -80,6 +80,18 @@ pub fn create_transaction(
     }
 }
 
+pub fn add_owner(multisig_pubkey: &Pubkey, owner: Pubkey) -> Instruction {
+    let data = MultisigInstruction::AddOwner { owner }
+        .try_to_vec()
+        .expect("pack");
+
+    Instruction {
+        program_id: id(),
+        accounts: vec![AccountMeta::new(*multisig_pubkey, true)],
+        data,
+    }
+}
+
 pub fn approve(
     proposer_pubkey: &Pubkey,
     multisig_pubkey: &Pubkey,

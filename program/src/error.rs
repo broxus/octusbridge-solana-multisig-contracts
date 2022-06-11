@@ -34,6 +34,8 @@ pub enum MultisigError {
     OwnersLackOff,
     #[error("Last transaction should be 'DeletePendingTransactions'")]
     InvalidLastTransaction,
+    #[error("Owner already exist")]
+    OwnerAlreadyExist,
 }
 
 impl From<MultisigError> for ProgramError {
