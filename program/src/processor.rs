@@ -286,22 +286,16 @@ impl Processor {
         let rent_sysvar_info = next_account_info(account_info_iter)?;
         let rent = &Rent::from_account_info(rent_sysvar_info)?;
 
-        msg!("TEST 1");
-
         if !proposer_account_info.is_signer {
             return Err(ProgramError::MissingRequiredSignature);
         }
 
         let mut multisig_account_data = Multisig::unpack(&multisig_account_info.data.borrow())?;
 
-        msg!("TEST 2");
-
         require!(
             multisig_account_data.pending_transactions.len() <= MAX_TRANSACTIONS,
             MultisigError::InvalidThreshold
         );
-
-        msg!("TEST 3");
 
         if multisig_account_data.pending_transactions.len() + 1 == MAX_TRANSACTIONS {
             if *program_id != pid {
@@ -319,8 +313,6 @@ impl Processor {
             }
         }
 
-        msg!("TEST 4");
-
         let owner_index = multisig_account_data
             .owners
             .iter()
@@ -333,8 +325,6 @@ impl Processor {
         if transaction_account != *transaction_account_info.key {
             return Err(ProgramError::InvalidAccountData);
         }
-
-        msg!("TEST 5");
 
         let transaction_account_signer_seeds: &[&[_]] =
             &[br"transaction", &seed.to_le_bytes(), &[transaction_nonce]];
@@ -352,8 +342,6 @@ impl Processor {
             data,
             signers,
         };
-
-        msg!("TEST 6");
 
         let data_len = tx.try_to_vec()?.len();
 
@@ -373,16 +361,12 @@ impl Processor {
             &[transaction_account_signer_seeds],
         )?;
 
-        msg!("TEST 7");
-
         tx.pack_into_slice(&mut transaction_account_info.data.borrow_mut());
 
         // Add transaction to pending list
         multisig_account_data
             .pending_transactions
             .push(*transaction_account_info.key);
-
-        msg!("TEST 8");
 
         Multisig::pack(
             multisig_account_data,
@@ -522,38 +506,26 @@ impl Processor {
             return Err(ProgramError::MissingRequiredSignature);
         }
 
-        msg!("Test 1");
-
         let mut multisig_account_data = Multisig::unpack(&multisig_account_info.data.borrow())?;
-
-        msg!("Test 2");
 
         let (multisig_account, _nonce) = Pubkey::find_program_address(
             &[br"multisig", &multisig_account_data.seed.to_le_bytes()],
             program_id,
         );
 
-        msg!("Test 3");
-
         if multisig_account != *multisig_account_info.key {
             return Err(ProgramError::InvalidAccountData);
         }
-
-        msg!("Test 4");
 
         multisig_account_data
             .pending_transactions
             .retain(|x| *x != pending_transaction);
 
-        msg!("Test 5");
-
         Multisig::pack(
             multisig_account_data,
             &mut multisig_account_info.data.borrow_mut(),
         )?;
-
-        msg!("Test 6");
-
+        
         Ok(())
     }
 }
