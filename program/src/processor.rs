@@ -525,7 +525,7 @@ impl Processor {
             multisig_account_data,
             &mut multisig_account_info.data.borrow_mut(),
         )?;
-        
+
         Ok(())
     }
 }

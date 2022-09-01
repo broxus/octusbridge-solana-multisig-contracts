@@ -13,7 +13,7 @@ wasm = ["no-entrypoint", "wasm-bindgen", "bindings", "js-sys"]
 [dependencies]
 borsh = "0.9"
 serde = { version = "1.0", features = ["derive"] }
-solana-program = "1.10"
+solana-program = "1.11"
 thiserror = "1.0"
 
 js-sys = { version = "0.3", optional = true }
@@ -24,8 +24,8 @@ getrandom = { version = "0.2", features = ["js"], optional = true }
 multisig-derive = { path = "../multisig-derive" }
 
 [dev-dependencies]
-solana-program-test = "1.10"
-solana-sdk = "1.10"
+solana-program-test = "1.11"
+solana-sdk = "1.11"
 
 [lib]
 crate-type = ["cdylib", "lib"]
