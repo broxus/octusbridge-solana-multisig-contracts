@@ -7,7 +7,13 @@ cargo build-bpf --manifest-path=./program/Cargo.toml --bpf-out-dir=dist/program
 
 #### Deploy
 ```bash
-cargo build-bpf --manifest-path=./program/Cargo.toml --bpf-out-dir=dist/program
+solana program deploy dist/program/multisig.so
+```
+
+#### Prepare to upgrade
+```bash
+solana program write-buffer --ws wss://api.mainnet-beta.solana.com dist/program/multisig.so
+solana program set-buffer-authority ${PROGRAM_ID} --new-buffer-authority ${AUTHORITY}
 ```
 
 #### Resuming failed deploy
