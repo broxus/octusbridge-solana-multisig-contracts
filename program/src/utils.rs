@@ -2,7 +2,7 @@
 macro_rules! require {
     ($invariant:expr, $error:tt $(,)?) => {
         if !($invariant) {
-            return Err(crate::ErrorCode::$error.into());
+            return Err($crate::ErrorCode::$error.into());
         }
     };
     ($invariant:expr, $error:expr $(,)?) => {

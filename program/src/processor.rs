@@ -168,15 +168,11 @@ impl Processor {
         }
 
         require!(
-            multisig_account_data.owners.len() + 1 <= MAX_SIGNERS,
+            multisig_account_data.owners.len() < MAX_SIGNERS,
             MultisigError::OwnersOverflow
         );
 
-        if let None = multisig_account_data
-            .owners
-            .iter()
-            .position(|a| *a == owner)
-        {
+        if !multisig_account_data.owners.iter().any(|a| *a == owner) {
             multisig_account_data.owners.push(owner);
         }
 
@@ -213,9 +209,8 @@ impl Processor {
         }
 
         require!(
-            multisig_account_data.owners.len() - 1 >= MIN_SIGNERS
-                && multisig_account_data.owners.len() - 1
-                    >= multisig_account_data.threshold as usize,
+            multisig_account_data.owners.len() > MIN_SIGNERS
+                && multisig_account_data.owners.len() > multisig_account_data.threshold as usize,
             MultisigError::OwnersLackOff
         );
 
