@@ -1,38 +1,47 @@
-# Multisig Solana Program
+# Solana Multisig program
 
-#### Build
+#### Build docker container
 ```bash
-cargo build-bpf --manifest-path=./program/Cargo.toml --bpf-out-dir=dist/program
+docker build -t contract-builder .
+```
+
+#### Build contracts
+```bash
+# Run docker container
+docker run --volume ${PWD}:/root -it --rm contract-builder:latest
+
+# Build solana programs
+./scripts/build.sh --programs
+
+# Build WASM binding
+./scripts/build.sh --wasm
+
+# Build Rust binding
+./scripts/build.sh --bindings
+
+# Verify solana programs
+./scripts/verify.sh \
+  --address msigDiHoyMYxDmLsPYQzvCKuw23yET41p8HM7aMZw6q \
+  --binary dist/program/multisig.so \
+  --url https://api.mainnet-beta.solana.com
+
+# Leave docker container
+exit
 ```
 
 #### Deploy
 ```bash
-solana program deploy dist/program/multisig.so
+solana program deploy ./dist/program/multisig.so
 ```
 
 #### Prepare to upgrade
 ```bash
-solana program write-buffer --ws wss://api.mainnet-beta.solana.com dist/program/multisig.so
-solana program set-buffer-authority ${PROGRAM_ID} --new-buffer-authority ${AUTHORITY}
+solana program write-buffer --ws wss://api.mainnet-beta.solana.com dist/program/${PROGRAM_BIN}
+solana program set-buffer-authority ${BUFFER_PROGRAM_ID} --new-buffer-authority ${MSIG_AUTHORITY}
 ```
 
 #### Resuming failed deploy
 ```bash
 solana-keygen recover -o dist/program/multisig-buffer-keypair.json
 solana program deploy --buffer dist/program/multisig-buffer-keypair.json dist/program/multisig.so
-```
-
-#### Run tests
-```bash
-cargo test-bpf --manifest-path=./program/Cargo.toml
-```
-
-#### Build WASM bindings
-```bash
-wasm-pack build --target web --out-name index program -- --features wasm
-```
-
-#### Build Rust bindings
-```bash
-cargo build --release --manifest-path=./program/Cargo.toml --features=bindings
 ```
