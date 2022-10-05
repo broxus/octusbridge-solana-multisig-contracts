@@ -8,10 +8,10 @@ docker build -t contract-builder .
 #### Build contracts
 ```bash
 # Run docker container
-docker run --volume ${PWD}:/root -it --rm contract-builder:latest
+docker run --volume ${PWD}:/root/contracts -it --rm contract-builder:latest
 
 # Build solana programs
-./scripts/build.sh --programs
+./scripts/build.sh --program
 
 # Build WASM binding
 ./scripts/build.sh --wasm

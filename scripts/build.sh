@@ -5,7 +5,7 @@ function print_help() {
   echo ''
   echo 'Options:'
   echo '  -h,--help         Print this help message and exit'
-  echo '  -p,--programs     Build solana program'
+  echo '  -p,--program      Build solana program'
   echo '  -w,--wasm         Build WASM bindings'
   echo '  -b,--bindings     Build Rust bindings'
 }
@@ -17,7 +17,7 @@ while [[ $# -gt 0 ]]; do
         print_help
         exit 0
       ;;
-      -p|--programs)
+      -p|--program)
         shift # past argument
 
         cargo build-bpf --manifest-path=./program/Cargo.toml  --bpf-out-dir=dist/program
@@ -31,11 +31,6 @@ while [[ $# -gt 0 ]]; do
         shift # past argument
 
         cargo build --release --manifest-path=./program/Cargo.toml  --features=bindings
-      ;;
-      -t|--tests)
-        shift # past argument
-
-        cargo test-bpf --manifest-path=./program/Cargo.toml
       ;;
       *) # unknown option
         echo 'ERROR: Unexpected'
