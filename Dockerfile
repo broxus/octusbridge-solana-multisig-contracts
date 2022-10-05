@@ -6,10 +6,9 @@ WORKDIR /root/contracts
 
 # Common packages
 ARG DEBIAN_FRONTEND=noninteractive
-ENV TZ=Europe/Belgrade
 
-RUN apt-get update && \
-    apt-get install --no-install-recommends -y \
+RUN apt update && \
+    apt install --no-install-recommends -y \
     build-essential libssl-dev libudev-dev gcc clang \
     cmake ca-certificates bzip2 wget curl pkg-config
 
