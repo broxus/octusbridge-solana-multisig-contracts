@@ -20,7 +20,7 @@ while [[ $# -gt 0 ]]; do
       -p|--program)
         shift # past argument
 
-        cargo build-bpf --manifest-path=./program/Cargo.toml  --bpf-out-dir=dist/program
+        cargo-build-sbf --manifest-path=./program/Cargo.toml --sbf-out-dir=dist/program --arch bpf
       ;;
       -w|--wasm)
         shift # past argument
@@ -31,6 +31,11 @@ while [[ $# -gt 0 ]]; do
         shift # past argument
 
         cargo build --release --manifest-path=./program/Cargo.toml  --features=bindings
+      ;;
+      -t|--tests)
+        shift # past argument
+
+        cargo-test-sbf --manifest-path=./program/Cargo.toml --arch bpf
       ;;
       *) # unknown option
         echo 'ERROR: Unexpected'
