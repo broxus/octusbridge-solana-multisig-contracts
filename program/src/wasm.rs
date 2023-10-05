@@ -21,7 +21,7 @@ pub fn create_multisig_ix(
 ) -> Result<JsValue, JsValue> {
     let funder_pubkey = Pubkey::from_str(funder_pubkey.as_str()).handle_error()?;
 
-    let owners: Vec<String> = owners.into_serde().handle_error()?;
+    let owners: Vec<String> = serde_wasm_bindgen::from_value(owners).handle_error()?;
     let owners = owners
         .into_iter()
         .map(|x| Pubkey::from_str(x.as_str()).unwrap())
@@ -117,7 +117,7 @@ pub fn create_transaction_ix(
     let proposer_pubkey = Pubkey::from_str(proposer_pubkey.as_str()).handle_error()?;
     let multisig_pubkey = Pubkey::from_str(multisig_pubkey.as_str()).handle_error()?;
 
-    let ix: Instruction = instruction.into_serde().handle_error()?;
+    let ix: Instruction = serde_wasm_bindgen::from_value(instruction).handle_error()?;
 
     let mut accounts = ix
         .accounts
