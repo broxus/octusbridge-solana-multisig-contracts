@@ -1,5 +1,10 @@
+*/target/*
+target
+
+Cargo.lock
+*/Cargo.lock
+
 .idea/
 dist/
-target/
 program/pkg/
 **/*.DS_Store

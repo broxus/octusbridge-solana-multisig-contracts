@@ -8,24 +8,25 @@ edition = "2021"
 no-entrypoint = []
 test-bpf = ["bindings"]
 bindings = ["no-entrypoint", "uuid", "getrandom"]
-wasm = ["no-entrypoint", "wasm-bindgen", "bindings", "js-sys"]
+wasm = ["no-entrypoint", "bindings", "serde-wasm-bindgen", "wasm-bindgen", "js-sys"]
 
 [dependencies]
-borsh = "0.9"
+borsh = "0.10"
 serde = { version = "1.0", features = ["derive"] }
-solana-program = "1.14"
+solana-program = "1.16"
 thiserror = "1.0"
 
 js-sys = { version = "0.3", optional = true }
-wasm-bindgen = { version = "0.2.80", features = ["serde-serialize"], optional = true }
+serde-wasm-bindgen = {version = "0.6", optional = true }
+wasm-bindgen = { version = "0.2.84", features = ["serde-serialize"], optional = true }
 uuid = { version = "1.1", features = ["v4", "serde"], optional = true }
 getrandom = { version = "0.2", features = ["js"], optional = true }
 
 multisig-derive = { path = "../multisig-derive" }
 
 [dev-dependencies]
-solana-program-test = "1.14"
-solana-sdk = "1.14"
+solana-program-test = "1.16"
+solana-sdk = "1.16"
 
 [lib]
 crate-type = ["cdylib", "lib"]

@@ -49,7 +49,7 @@ pub fn create_multisig_ix(
         data,
     };
 
-    return JsValue::from_serde(&ix).handle_error();
+    return serde_wasm_bindgen::to_value(&ix).handle_error();
 }
 
 #[wasm_bindgen(js_name = "addOwner")]
@@ -67,7 +67,7 @@ pub fn add_owner_ix(multisig_pubkey: String, owner: String) -> Result<JsValue, J
         data,
     };
 
-    return JsValue::from_serde(&ix).handle_error();
+    return serde_wasm_bindgen::to_value(&ix).handle_error();
 }
 
 #[wasm_bindgen(js_name = "deleteOwner")]
@@ -85,7 +85,7 @@ pub fn delete_owner_ix(multisig_pubkey: String, owner: String) -> Result<JsValue
         data,
     };
 
-    return JsValue::from_serde(&ix).handle_error();
+    return serde_wasm_bindgen::to_value(&ix).handle_error();
 }
 
 #[wasm_bindgen(js_name = "updateThreshold")]
@@ -102,7 +102,7 @@ pub fn update_threshold_ix(multisig_pubkey: String, threshold: u64) -> Result<Js
         data,
     };
 
-    return JsValue::from_serde(&ix).handle_error();
+    return serde_wasm_bindgen::to_value(&ix).handle_error();
 }
 
 #[wasm_bindgen(js_name = "createTransaction")]
@@ -159,7 +159,7 @@ pub fn create_transaction_ix(
         data,
     };
 
-    return JsValue::from_serde(&ix).handle_error();
+    return serde_wasm_bindgen::to_value(&ix).handle_error();
 }
 
 #[wasm_bindgen(js_name = "setProgramAuthority")]
@@ -179,7 +179,7 @@ pub fn set_program_authority_ix(
         Some(&new_authority_pubkey),
     );
 
-    return JsValue::from_serde(&ix).handle_error();
+    return serde_wasm_bindgen::to_value(&ix).handle_error();
 }
 
 #[wasm_bindgen(js_name = "upgradeProgram")]
@@ -201,7 +201,7 @@ pub fn upgrade_program_ix(
         &spill_pubkey,
     );
 
-    return JsValue::from_serde(&ix).handle_error();
+    return serde_wasm_bindgen::to_value(&ix).handle_error();
 }
 
 #[wasm_bindgen(js_name = "closeProgram")]
@@ -224,7 +224,7 @@ pub fn close_program_ix(
         Some(&program_pubkey),
     );
 
-    return JsValue::from_serde(&ix).handle_error();
+    return serde_wasm_bindgen::to_value(&ix).handle_error();
 }
 
 #[wasm_bindgen(js_name = "closeBuffer")]
@@ -244,7 +244,7 @@ pub fn close_buffer_ix(
         None,
     );
 
-    return JsValue::from_serde(&ix).handle_error();
+    return serde_wasm_bindgen::to_value(&ix).handle_error();
 }
 
 #[wasm_bindgen(js_name = "approve")]
@@ -269,7 +269,7 @@ pub fn approve_ix(
         data,
     };
 
-    return JsValue::from_serde(&ix).handle_error();
+    return serde_wasm_bindgen::to_value(&ix).handle_error();
 }
 
 #[wasm_bindgen(js_name = "deletePendingTransaction")]
@@ -292,7 +292,7 @@ pub fn delete_pending_transaction_ix(
         data,
     };
 
-    return JsValue::from_serde(&ix).handle_error();
+    return serde_wasm_bindgen::to_value(&ix).handle_error();
 }
 
 #[wasm_bindgen(js_name = "execute")]
@@ -329,7 +329,7 @@ pub fn execute_ix(
         data,
     };
 
-    return JsValue::from_serde(&ix).handle_error();
+    return serde_wasm_bindgen::to_value(&ix).handle_error();
 }
 
 #[wasm_bindgen(js_name = "unpackMultisig")]
@@ -342,7 +342,7 @@ pub fn unpack_multisig(data: Vec<u8>) -> Result<JsValue, JsValue> {
         pending_transactions: multisig.pending_transactions,
     };
 
-    return JsValue::from_serde(&msig).handle_error();
+    return serde_wasm_bindgen::to_value(&msig).handle_error();
 }
 
 #[wasm_bindgen(js_name = "unpackTransaction")]
@@ -358,7 +358,7 @@ pub fn unpack_transaction(data: Vec<u8>) -> Result<JsValue, JsValue> {
         data: transaction.data,
     };
 
-    return JsValue::from_serde(&tx).handle_error();
+    return serde_wasm_bindgen::to_value(&tx).handle_error();
 }
 
 #[derive(Serialize, Deserialize)]
