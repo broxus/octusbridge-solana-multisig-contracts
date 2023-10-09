@@ -26,4 +26,4 @@ pub use self::bindings::*;
 #[cfg(not(feature = "no-entrypoint"))]
 mod entrypoint;
 
-solana_program::declare_id!("msig8PvWQaT3mrgWG5vxZ5UHdh5AkNAKS1RJb81cuXp");
+solana_program::declare_id!("msigPLDQvLGAg7bNYueKVz88T998Zfw9aHRDGc9gtgy");
